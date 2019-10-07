@@ -5,12 +5,14 @@ import {
   Arg,
   ObjectType,
   Field,
-  Ctx
+  Ctx,
+  UseMiddleware
 } from "type-graphql";
 import { User } from "./entity/User";
 import { hash, compare } from "bcryptjs";
 import { MyContext } from "./MyContext";
 import { createAccessToken, createRefreshToken } from "./auth";
+import { isAuth } from "./isAuth";
 
 @ObjectType()
 class LoginResponse {
@@ -21,8 +23,11 @@ class LoginResponse {
 @Resolver()
 export class UserResolver {
   @Query(() => String)
-  hello() {
-    return "hi!";
+  // This will run on every request
+  @UseMiddleware(isAuth)
+  bye(@Ctx() { payload }: MyContext) {
+    // payload will always be there, if it's not it would fail in the isAuth middleware before we get to this point
+    return `your used id is ${payload!.userId}`;
   }
 
   // This will return User(s) entity defined in /entity/User
