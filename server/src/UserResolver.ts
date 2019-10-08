@@ -6,13 +6,16 @@ import {
   ObjectType,
   Field,
   Ctx,
-  UseMiddleware
+  UseMiddleware,
+  Int
 } from "type-graphql";
 import { User } from "./entity/User";
 import { hash, compare } from "bcryptjs";
 import { MyContext } from "./MyContext";
 import { createAccessToken, createRefreshToken } from "./auth";
 import { isAuth } from "./isAuth";
+import { sendRefreshToken } from "./sendRefreshToken";
+import { getConnection } from "typeorm";
 
 @ObjectType()
 class LoginResponse {
@@ -54,6 +57,17 @@ export class UserResolver {
     }
   }
 
+  // NOTE: This should not actually be exposed to Graphql, this is for testing purposes only
+  @Mutation(() => Boolean)
+  async revokeRefreshTokensForUser(@Arg("userId", () => Int) userId: number) {
+    // Increment the tokenVersion of the user to invalidate their token
+    await getConnection()
+      .getRepository(User)
+      .increment({ id: userId }, "tokenVersion", 1);
+
+    return true;
+  }
+
   @Mutation(() => LoginResponse)
   async login(
     @Arg("email") email: string,
@@ -75,9 +89,8 @@ export class UserResolver {
     }
 
     // Login successful
-    res.cookie("jid", createRefreshToken(user), {
-      httpOnly: true
-    });
+    // Set the refresh token. It will expire after 7 days of user inactivity.
+    sendRefreshToken(res, createRefreshToken(user));
 
     return {
       accessToken: createAccessToken(user)

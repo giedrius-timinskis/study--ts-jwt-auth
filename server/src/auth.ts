@@ -9,7 +9,11 @@ export const createAccessToken = (user: User) => {
 };
 
 export const createRefreshToken = (user: User) => {
-  return sign({ userId: user.id }, REFRESH_JWT_SECRET, {
-    expiresIn: "7d"
-  }); // This cookie expiring will force the user to relog, so has to be longer
+  return sign(
+    { userId: user.id, tokenVersion: user.tokenVersion },
+    REFRESH_JWT_SECRET,
+    {
+      expiresIn: "7d"
+    }
+  ); // This cookie expiring will force the user to relog, so has to be longer
 };

@@ -18,4 +18,7 @@ export class User extends BaseEntity {
   @Column()
   // Note that we dont use @Field here because we don't want to expose the password to queries
   password: string;
+
+  @Column("int", { default: 0 })
+  tokenVersion: number;
 }
